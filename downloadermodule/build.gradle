@@ -1,0 +1,47 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-android'
+
+android {
+    compileSdkVersion 28
+
+
+
+    defaultConfig {
+        minSdkVersion 18
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+
+
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+}
+
+apply from: './push.gradle'
+dependencies {
+    if("true".equals(UPLOAD)){
+        implementation 'com.android.support:appcompat-v7:26.+'
+        implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+        implementation 'com.squareup.okhttp3:okhttp:3.10.0'
+    }else{
+        compileOnly 'com.android.support:appcompat-v7:26.1.0'
+        compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+        compileOnly 'com.squareup.okhttp3:okhttp:3.10.0'
+    }
+
+}
+repositories {
+    mavenCentral()
+}
