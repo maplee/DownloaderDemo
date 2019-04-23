@@ -2,6 +2,7 @@ package com.matt.downloader.openapi
 
 import android.content.Context
 import com.matt.downloader.inner.DownloadDispatcher
+import com.matt.downloader.inner.OkHttpManager
 import com.matt.downloader.inner.Utils
 
 /**
@@ -30,6 +31,10 @@ class DownloaderApi {
 
         fun containTask(url: String): Boolean {
             return DownloadDispatcher.getInstance().containTask(url)
+        }
+
+        fun get(url: String,get: IGet){
+            OkHttpManager.getInstance().asyncGet(url, get);
         }
     }
 }

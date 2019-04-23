@@ -2,10 +2,8 @@ package com.matt.downloader.inner
 
 import android.util.Log
 import com.matt.downloader.BuildConfig
-import okhttp3.Call
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
+import com.matt.downloader.openapi.IGet
+import okhttp3.*
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.HostnameVerifier
@@ -60,5 +58,18 @@ class OkHttpManager {
             .addHeader("Accept-Encoding", "identity")
             .build()
         return mOkHttpClient.newCall(request).execute()
+    }
+
+    fun asyncGet(url: String,get: IGet){
+        val call = OkHttpManager.getInstance().asyncCall(url)
+        call.enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                get.onFailure(call,e)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                get.onResponse(call, response)
+            }
+        })
     }
 }
