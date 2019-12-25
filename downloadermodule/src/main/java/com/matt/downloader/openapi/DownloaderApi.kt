@@ -29,6 +29,15 @@ class DownloaderApi {
             DownloadDispatcher.getInstance().stopDownLoad(url)
         }
 
+        @Throws(Exception::class)
+        suspend fun startSync(name: String, url: String, callback: DownloadCallback):String? {
+            return DownloadDispatcher.getInstance().startSyncDownload(name, url, callback)
+        }
+
+        fun stopSync(url: String){
+            DownloadDispatcher.getInstance().stopSyncDownLoad(url)
+        }
+
         fun containTask(url: String): Boolean {
             return DownloadDispatcher.getInstance().containTask(url)
         }

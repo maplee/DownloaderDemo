@@ -4,14 +4,17 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.support.annotation.RequiresApi
-import android.support.v4.content.ContextCompat
-import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.View
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat.requestPermissions
+import androidx.core.content.ContextCompat
 import com.matt.downloader.openapi.DownloadCallback
 import com.matt.downloader.openapi.DownloaderApi
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.io.File
 
 class MainActivity : View.OnClickListener, AppCompatActivity() {
@@ -70,15 +73,45 @@ class MainActivity : View.OnClickListener, AppCompatActivity() {
             })
     }
 
+    private fun startSync() {
+        GlobalScope.launch {
+            val  path= DownloaderApi.startSync(
+                "test.apk",
+                URL,
+                object : DownloadCallback {
+                    override fun onFailure(e: Exception) {
+                        Log.e(TAG, "e:", e)
+                    }
+
+                    override fun onProgress(progress: Long, total: Long) {
+                        Log.i(TAG, "onProgress-progress:" + progress + ",total:" + total)
+                    }
+
+                    override fun onPause(progress: Long, total: Long) {
+                        Log.i(TAG, "onPause--progress:" + progress + ",total:" + total)
+                    }
+
+                    override fun onSuccess(file: File) {
+                        Log.i(TAG, "onSuccess--progress:" + file.absolutePath)
+                    }
+
+                })
+
+            Log.i(TAG, "onSuccess-result:${path}" )
+        }
+
+
+    }
+
 
     override fun onClick(view: View?) {
         when (view?.id) {
             R.id.btn_start -> consume {
                 Log.i(TAG, "onClick--start")
-                start()
+                startSync()
             }
             R.id.btn_pause -> consume {
-                DownloaderApi.stop(URL)
+                DownloaderApi.stopSync(URL)
             }
             R.id.btn_app -> consume {
                 var list:MutableList<PackageInfo> = packageManager.getInstalledPackages(PackageManager.GET_UNINSTALLED_PACKAGES)

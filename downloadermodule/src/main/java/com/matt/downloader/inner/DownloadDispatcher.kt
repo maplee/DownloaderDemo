@@ -1,5 +1,6 @@
 package com.matt.downloader.inner
 
+import android.accounts.NetworkErrorException
 import android.text.TextUtils
 import android.util.Log
 import com.matt.downloader.BuildConfig
@@ -8,6 +9,7 @@ import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.Response
 import java.io.IOException
+import java.lang.NullPointerException
 import java.util.*
 import java.util.concurrent.*
 
@@ -15,7 +17,7 @@ import java.util.concurrent.*
  * Author:Created by jiaguofeng on 2019/4/10.
  * Email:jiagfone@163.com
  */
-class DownloadDispatcher private constructor(){
+class DownloadDispatcher private constructor() {
 
 
     private val TAG = "DownloadDispatcher"
@@ -29,14 +31,15 @@ class DownloadDispatcher private constructor(){
      */
     private val CORE_POOL_SIZE = THREAD_SIZE
 
+    private var mSyncRunnable:SyncRunnable? = null
     private val runningTasks = ArrayDeque<DownloadTask>()
 
-    private object mHolder{
+    private object mHolder {
         val instance = DownloadDispatcher()
     }
 
     companion object {
-        fun getInstance():DownloadDispatcher{
+        fun getInstance(): DownloadDispatcher {
             return mHolder.instance
         }
     }
@@ -78,7 +81,7 @@ class DownloadDispatcher private constructor(){
                 //获取文件的大小
                 var contentLength = response.body()?.contentLength()
 
-                if (BuildConfig.DEBUG){
+                if (BuildConfig.DEBUG) {
                     Log.i(TAG, "文件大小=$contentLength")
                 }
                 if (contentLength == null || contentLength <= -1) {
@@ -89,6 +92,44 @@ class DownloadDispatcher private constructor(){
                 runningTasks.add(downloadTask)
             }
         })
+    }
+
+    /**
+     * @param name     文件名
+     * @param url      下载的地址
+     * @param callBack 回调接口
+     */
+    @Throws(Exception::class)
+    suspend fun startSyncDownload(name: String, url: String, callBack: DownloadCallback): String? {
+        val call = OkHttpManager.getInstance().asyncCall(url)
+        val response = call.execute()
+        if (response.code() != 200) {
+            val e = NetworkErrorException("!200")
+            callBack.onFailure(e)
+            throw e
+        }
+        //获取文件的大小
+        var contentLength = response.body()?.contentLength()
+
+        if (BuildConfig.DEBUG) {
+            Log.i(TAG, "文件大小=$contentLength")
+        }
+        if (contentLength == null || contentLength <= -1) {
+            val e = NullPointerException("response length is null")
+            callBack.onFailure(e)
+            throw e
+        }
+        mSyncRunnable = SyncRunnable(name, url, contentLength, 0, contentLength, callBack)
+        return mSyncRunnable?.run()
+    }
+
+    /**
+     * 停止下载
+     *
+     * @param url
+     */
+    fun stopSyncDownLoad(url: String) {
+        mSyncRunnable?.stop()
     }
 
     /**
@@ -108,7 +149,7 @@ class DownloadDispatcher private constructor(){
      * @param downLoadTask 下载任务
      */
     fun recyclerTask(downLoadTask: DownloadTask) {
-        if (runningTasks == null){
+        if (runningTasks == null) {
             return
         }
         runningTasks.remove(downLoadTask)
@@ -132,9 +173,6 @@ class DownloadDispatcher private constructor(){
         }
         return false
     }
-
-
-
 
 
 }
